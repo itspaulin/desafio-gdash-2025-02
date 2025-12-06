@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Cloud, LogOut, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { User } from "@/types/user";
+import { ThemeToggle } from "./ThemeToggle";
 
 interface SidebarProps {
   user: User | null;
@@ -31,9 +32,12 @@ export function Sidebar({
       <div className="flex flex-col h-full">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center gap-2">
-            <Cloud className="h-6 w-6 text-primary" />
-            <span className="font-bold text-lg">Weather</span>
+          <div className="flex items-center justify-between w-full">
+            <div className="flex gap-4">
+              <Cloud className="h-6 w-6 text-primary" />
+              <span className="font-bold text-lg">Weather</span>
+            </div>
+            <ThemeToggle />
           </div>
           <Button
             variant="ghost"
