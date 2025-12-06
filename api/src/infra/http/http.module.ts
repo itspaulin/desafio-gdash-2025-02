@@ -51,6 +51,9 @@ import { JwtTokenProvider } from "../providers/token.provider";
 import { SeedAdminService } from "../services/seed-admin.service";
 import { AIInsightsProvider } from "@/domain/application/providers/ai-insights-provider";
 import { GroqInsightsProvider } from "../providers/groq-insights.provider";
+import { AIInsightsProviderChain } from "../providers/ai-insights-provider-chain";
+import { GeminiInsightsProvider } from "../providers/gemini-insights.provider";
+import { AIProvidersStatusController } from "./controllers/ai-providers-status.controller";
 
 @Module({
   imports: [
@@ -83,6 +86,8 @@ import { GroqInsightsProvider } from "../providers/groq-insights.provider";
     DeleteUserController,
     ListUsersController,
     UpdateUserController,
+
+    AIProvidersStatusController,
   ],
   providers: [
     CreateWeatherLogUseCase,
@@ -103,6 +108,9 @@ import { GroqInsightsProvider } from "../providers/groq-insights.provider";
     ListUsersUseCase,
     UpdateUserUseCase,
     DeleteUserUseCase,
+    GroqInsightsProvider,
+    GeminiInsightsProvider,
+    AIInsightsProviderChain,
     {
       provide: UserRepository,
       useClass: MongoDBUserRepository,
@@ -121,7 +129,7 @@ import { GroqInsightsProvider } from "../providers/groq-insights.provider";
     },
     {
       provide: AIInsightsProvider,
-      useClass: GroqInsightsProvider,
+      useClass: AIInsightsProviderChain,
     },
   ],
   exports: [JwtModule],
