@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { User, CreateUserRequest, UpdateUserRequest } from "@/types/user";
+import { PasswordStrength } from "@/components/PasswordStrength";
 
 interface UserDialogProps {
   open: boolean;
@@ -129,6 +130,7 @@ export function UserDialog({
                 disabled={isSubmitting}
                 placeholder={user ? "••••••" : ""}
               />
+              {!user && <PasswordStrength password={formData.password} />}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="role">Função</Label>

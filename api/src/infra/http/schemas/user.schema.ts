@@ -1,9 +1,21 @@
 import z from "zod";
 
+// Schema de senha forte
+const passwordSchema = z
+  .string()
+  .min(8, "Senha deve ter no mínimo 8 caracteres")
+  .regex(/[a-z]/, "Senha deve conter ao menos uma letra minúscula")
+  .regex(/[A-Z]/, "Senha deve conter ao menos uma letra maiúscula")
+  .regex(/[0-9]/, "Senha deve conter ao menos um número")
+  .regex(
+    /[^a-zA-Z0-9]/,
+    "Senha deve conter ao menos um caractere especial (!@#$%^&*...)"
+  );
+
 const createUserInputSchema = z.object({
-  name: z.string().min(3, "Name must be at least 3 characters"),
+  name: z.string().min(3, "Nome deve ter ao menos 3 caracteres"),
   email: z.string().email("Formato de email inválido"),
-  password: z.string().min(6, "Senha deve ter ao menos 6 caracteres"),
+  password: passwordSchema,
   role: z.enum(["admin", "user"]).optional(),
 });
 
@@ -22,9 +34,9 @@ export type CreateUserSchema = {
 };
 
 export const updateUserSchema = z.object({
-  name: z.string().min(3).optional(),
-  email: z.string().email().optional(),
-  password: z.string().min(6).optional(),
+  name: z.string().min(3, "Nome deve ter ao menos 3 caracteres").optional(),
+  email: z.string().email("Formato de email inválido").optional(),
+  password: passwordSchema.optional(),
   role: z.enum(["admin", "user"]).optional(),
 });
 
