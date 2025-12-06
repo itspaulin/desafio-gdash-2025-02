@@ -1,7 +1,8 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
-import { DatabaseModule } from "./database/mongodb/database.module";
+import { DatabaseModule } from "./database/database.module";
 import { HttpModule } from "./http/http.module";
+import { RedisModule } from "./http/cache/redis.module";
 
 @Module({
   imports: [
@@ -9,6 +10,7 @@ import { HttpModule } from "./http/http.module";
       isGlobal: true,
     }),
     DatabaseModule,
+    RedisModule,
     HttpModule,
   ],
 })

@@ -44,7 +44,7 @@ import { DeleteUserUseCase } from "@/domain/application/use-cases/delete-user.us
 import { UserRepository } from "@/domain/application/repositories/user-repository";
 import { MongoDBUserRepository } from "../database/repositories/mongodb-user-repository";
 import { HashProvider } from "@/domain/application/providers/hash-provider";
-import { DatabaseModule } from "../database/mongodb/database.module";
+import { DatabaseModule } from "../database/database.module";
 import { BcryptHashProvider } from "../providers/hash.provider";
 import { TokenProvider } from "@/domain/application/providers/token-provider";
 import { JwtTokenProvider } from "../providers/token.provider";
@@ -54,6 +54,9 @@ import { GroqInsightsProvider } from "../providers/groq-insights.provider";
 import { AIInsightsProviderChain } from "../providers/ai-insights-provider-chain";
 import { GeminiInsightsProvider } from "../providers/gemini-insights.provider";
 import { AIProvidersStatusController } from "./controllers/ai-providers-status.controller";
+import { CacheService } from "./cache/cache.service";
+import { CacheStatusController } from "./controllers/cache-status.controller";
+import { CacheStatsController } from "./controllers/cache-stats.controller";
 
 @Module({
   imports: [
@@ -84,10 +87,13 @@ import { AIProvidersStatusController } from "./controllers/ai-providers-status.c
     AuthController,
     CreateUserController,
     DeleteUserController,
+    GetUserByIdController,
     ListUsersController,
     UpdateUserController,
 
     AIProvidersStatusController,
+    CacheStatusController,
+    CacheStatsController,
   ],
   providers: [
     CreateWeatherLogUseCase,
@@ -108,6 +114,8 @@ import { AIProvidersStatusController } from "./controllers/ai-providers-status.c
     ListUsersUseCase,
     UpdateUserUseCase,
     DeleteUserUseCase,
+
+    CacheService,
     GroqInsightsProvider,
     GeminiInsightsProvider,
     AIInsightsProviderChain,
