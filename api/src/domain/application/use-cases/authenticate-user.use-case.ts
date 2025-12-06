@@ -2,7 +2,7 @@ import { Either, left, right } from "@/core/either";
 import { UserRepository } from "../repositories/user-repository";
 import { HashProvider } from "../providers/hash-provider";
 import { InvalidCredentialsError } from "./errors/invalid-credentials-error";
-import { TokenProvider } from "../providers/providers/token-provider";
+import { TokenProvider } from "../providers/token-provider";
 import { Injectable } from "@nestjs/common";
 
 interface AuthenticateUserUseCaseRequest {

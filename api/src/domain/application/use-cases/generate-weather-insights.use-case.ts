@@ -1,7 +1,8 @@
 import { Injectable } from "@nestjs/common";
 import { WeatherLogRepository } from "../repositories/weather-log-repository";
 import { Either, right } from "src/core/either";
-import Groq from "groq-sdk";
+import { AIInsightsProvider } from "../providers/ai-insights-provider";
+import { Optional } from "@/core/@types/optional";
 
 export interface GenerateWeatherInsightsUseCaseRequest {
   startDate?: Date;
@@ -17,6 +18,7 @@ export interface WeatherInsight {
   predictions: string[];
   anomalies: string[];
   generatedAt: Date;
+  usedFallback?: boolean;
 }
 
 export interface GenerateWeatherInsightsUseCaseResponse {
@@ -26,17 +28,60 @@ export interface GenerateWeatherInsightsUseCaseResponse {
 
 @Injectable()
 export class GenerateWeatherInsightsUseCase {
-  private groq: Groq;
+  private insightCache = new Map<
+    string,
+    { data: WeatherInsight; timestamp: number }
+  >();
+  private readonly CACHE_TTL = 1000 * 60 * 30; // 30 minutos
 
-  constructor(private weatherLogRepository: WeatherLogRepository) {
-    this.groq = new Groq({
-      apiKey: process.env.GROQ_API_KEY || "",
+  constructor(
+    private weatherLogRepository: WeatherLogRepository,
+    private aiInsightsProvider: AIInsightsProvider
+  ) {}
+
+  private getCacheKey(request: GenerateWeatherInsightsUseCaseRequest): string {
+    return `${request.location || "global"}-${request.startDate?.toISOString() || "all"}-${request.endDate?.toISOString() || "all"}`;
+  }
+
+  private getCachedInsight(key: string): WeatherInsight | null {
+    const cached = this.insightCache.get(key);
+    if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+      console.log("✅ Usando insight do cache");
+      return cached.data;
+    }
+    return null;
+  }
+
+  private setCachedInsight(key: string, insight: WeatherInsight): void {
+    this.insightCache.set(key, {
+      data: insight,
+      timestamp: Date.now(),
     });
   }
 
   async execute(
     request: GenerateWeatherInsightsUseCaseRequest
   ): Promise<Either<null, GenerateWeatherInsightsUseCaseResponse>> {
+    // Verifica cache primeiro
+    const cacheKey = this.getCacheKey(request);
+    const cachedInsight = this.getCachedInsight(cacheKey);
+
+    if (cachedInsight) {
+      const result = await this.weatherLogRepository.findMany({
+        page: 1,
+        limit: request.limit || 100,
+        startDate: request.startDate,
+        endDate: request.endDate,
+        location: request.location,
+      });
+
+      return right({
+        insights: cachedInsight,
+        dataPointsAnalyzed: result.data.length,
+      });
+    }
+
+    // Busca dados meteorológicos
     const result = await this.weatherLogRepository.findMany({
       page: 1,
       limit: request.limit || 100,
@@ -69,94 +114,160 @@ export class GenerateWeatherInsightsUseCase {
       probabilidadeChuva: log.rainProbability,
     }));
 
-    const prompt = this.buildPrompt(weatherData, request.location);
-    const insights = await this.generateInsightsWithGroq(prompt);
+    // Tenta gerar insights com IA
+    let insightData: Optional<WeatherInsight, "generatedAt">;
+
+    if (this.aiInsightsProvider.isAvailable()) {
+      const aiInsights = await this.aiInsightsProvider.generateInsights(
+        weatherData,
+        request.location
+      );
+
+      if (aiInsights) {
+        insightData = {
+          ...aiInsights,
+          usedFallback: false,
+        };
+      } else {
+        // Fallback se a IA falhar
+        insightData = this.generateStaticInsights(
+          weatherData,
+          request.location
+        );
+      }
+    } else {
+      // Fallback se a IA não estiver disponível
+      insightData = this.generateStaticInsights(weatherData, request.location);
+    }
+
+    const insights: WeatherInsight = {
+      ...insightData,
+      generatedAt: new Date(),
+    };
+
+    // Cacheia o resultado
+    this.setCachedInsight(cacheKey, insights);
 
     return right({
-      insights: {
-        ...insights,
-        generatedAt: new Date(),
-      },
+      insights,
       dataPointsAnalyzed: result.data.length,
     });
   }
 
-  private buildPrompt(weatherData: any[], location?: string): string {
-    const locationText = location || "a região";
-    const dataJson = JSON.stringify(weatherData, null, 2);
+  private generateStaticInsights(
+    weatherData: any[],
+    location?: string
+  ): Optional<WeatherInsight, "generatedAt"> {
+    // Calcula estatísticas básicas
+    const temperatures = weatherData.map((d) => d.temperatura);
+    const humidities = weatherData.map((d) => d.umidade);
+    const windSpeeds = weatherData.map((d) => d.velocidadeVento);
 
-    return `Você é um especialista em meteorologia e análise de dados climáticos. 
+    const avgTemp = (
+      temperatures.reduce((a, b) => a + b, 0) / temperatures.length
+    ).toFixed(1);
+    const maxTemp = Math.max(...temperatures);
+    const minTemp = Math.min(...temperatures);
+    const avgHumidity = (
+      humidities.reduce((a, b) => a + b, 0) / humidities.length
+    ).toFixed(1);
+    const avgWindSpeed = (
+      windSpeeds.reduce((a, b) => a + b, 0) / windSpeeds.length
+    ).toFixed(1);
 
-Analise os seguintes dados climáticos de ${locationText}:
+    // Identifica condições mais comuns
+    const conditions = weatherData.map((d) => d.condicao);
+    const conditionCounts = conditions.reduce(
+      (acc, condition) => {
+        acc[condition] = (acc[condition] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
+    const mostCommonCondition =
+      Object.entries(conditionCounts).sort(
+        (a, b) => (b[1] as number) - (a[1] as number)
+      )[0]?.[0] || "variado";
 
-${dataJson}
+    const locationText = location || "a região analisada";
 
-Com base nesses dados, forneça uma análise detalhada em formato JSON com a seguinte estrutura:
+    const summary = `Análise climática de ${locationText}: temperatura média de ${avgTemp}°C (variando entre ${minTemp}°C e ${maxTemp}°C), com condição predominante de ${mostCommonCondition}. Umidade média de ${avgHumidity}% e ventos a ${avgWindSpeed} km/h.`;
 
-{
-  "summary": "Um resumo executivo do clima no período analisado (2-3 frases)",
-  "trends": ["Array de tendências observadas nos dados"],
-  "recommendations": ["Array de recomendações práticas baseadas nos padrões identificados"],
-  "predictions": ["Array de previsões ou expectativas para os próximos dias"],
-  "anomalies": ["Array de anomalias ou padrões incomuns detectados"]
-}
+    const trends: string[] = [];
 
-Seja específico, use números e dados concretos, e forneça insights acionáveis.
-Responda APENAS com o JSON, sem texto adicional.`;
-  }
-
-  private async generateInsightsWithGroq(
-    prompt: string
-  ): Promise<Omit<WeatherInsight, "generatedAt">> {
-    try {
-      const chatCompletion = await this.groq.chat.completions.create({
-        messages: [
-          {
-            role: "user",
-            content: prompt,
-          },
-        ],
-        model: "llama-3.3-70b-versatile",
-        temperature: 0.7,
-        max_tokens: 2000,
-        response_format: { type: "json_object" },
-      });
-
-      const content = chatCompletion.choices[0]?.message?.content;
-
-      if (!content) {
-        throw new Error("Resposta vazia da IA");
-      }
-
-      const insights = JSON.parse(content);
-
-      return {
-        summary: insights.summary || "Análise indisponível",
-        trends: insights.trends || [],
-        recommendations: insights.recommendations || [],
-        predictions: insights.predictions || [],
-        anomalies: insights.anomalies || [],
-      };
-    } catch (error) {
-      console.error("Erro ao gerar insights com Groq:", error);
-
-      return this.generateFallbackInsights();
+    if (maxTemp - minTemp > 10) {
+      trends.push(
+        `Alta amplitude térmica (${(maxTemp - minTemp).toFixed(1)}°C de variação)`
+      );
     }
-  }
 
-  private generateFallbackInsights(): Omit<WeatherInsight, "generatedAt"> {
+    if (parseFloat(avgHumidity) > 70) {
+      trends.push("Umidade elevada no período analisado");
+    } else if (parseFloat(avgHumidity) < 40) {
+      trends.push("Umidade baixa no período analisado");
+    }
+
+    if (parseFloat(avgWindSpeed) > 20) {
+      trends.push("Ventos fortes registrados no período");
+    }
+
+    const recommendations: string[] = [];
+
+    if (parseFloat(avgTemp) > 30) {
+      recommendations.push(
+        "🌡️ Temperaturas elevadas: mantenha-se hidratado e evite exposição solar prolongada"
+      );
+    } else if (parseFloat(avgTemp) < 15) {
+      recommendations.push(
+        "🧥 Temperaturas baixas: vista-se adequadamente para se manter aquecido"
+      );
+    }
+
+    if (parseFloat(avgHumidity) > 70) {
+      recommendations.push(
+        "💧 Alta umidade: prefira ambientes climatizados em horários de maior calor"
+      );
+    } else if (parseFloat(avgHumidity) < 40) {
+      recommendations.push(
+        "🏜️ Baixa umidade: aumente a ingestão de líquidos e use hidratante para pele"
+      );
+    }
+
+    if (
+      mostCommonCondition.toLowerCase().includes("rain") ||
+      mostCommonCondition.toLowerCase().includes("chuva")
+    ) {
+      recommendations.push(
+        "☔ Chuvas frequentes: tenha sempre um guarda-chuva à mão"
+      );
+    }
+
+    const predictions: string[] = [
+      "Padrões climáticos devem se manter similares aos observados",
+      `Temperatura deve continuar em torno de ${avgTemp}°C`,
+    ];
+
+    const anomalies: string[] = [];
+
+    if (maxTemp > 35) {
+      anomalies.push(`Temperatura máxima elevada registrada: ${maxTemp}°C`);
+    }
+    if (minTemp < 10) {
+      anomalies.push(`Temperatura mínima baixa registrada: ${minTemp}°C`);
+    }
+    if (parseFloat(avgWindSpeed) > 30) {
+      anomalies.push(
+        `Ventos muito fortes registrados (média de ${avgWindSpeed} km/h)`
+      );
+    }
+
     return {
-      summary:
-        "Não foi possível gerar insights com IA. Configure a GROQ_API_KEY para análises detalhadas.",
-      trends: ["Sistema coletando dados climáticos regularmente"],
-      recommendations: [
-        "Obtenha uma API key gratuita em: https://console.groq.com",
-        "Configure GROQ_API_KEY no arquivo .env",
-      ],
-      predictions: [
-        "Sistema pronto para análises quando IA estiver configurada",
-      ],
-      anomalies: [],
+      summary,
+      trends,
+      recommendations,
+      predictions,
+      anomalies,
+      usedFallback: true,
     };
   }
 }

@@ -46,9 +46,11 @@ import { MongoDBUserRepository } from "../database/repositories/mongodb-user-rep
 import { HashProvider } from "@/domain/application/providers/hash-provider";
 import { DatabaseModule } from "../database/mongodb/database.module";
 import { BcryptHashProvider } from "../providers/hash.provider";
-import { TokenProvider } from "@/domain/application/providers/providers/token-provider";
+import { TokenProvider } from "@/domain/application/providers/token-provider";
 import { JwtTokenProvider } from "../providers/token.provider";
 import { SeedAdminService } from "../services/seed-admin.service";
+import { AIInsightsProvider } from "@/domain/application/providers/ai-insights-provider";
+import { GroqInsightsProvider } from "../providers/groq-insights.provider";
 
 @Module({
   imports: [
@@ -95,10 +97,6 @@ import { SeedAdminService } from "../services/seed-admin.service";
     CalculateComfortIndexUseCase,
     GenerateWeatherSummaryUseCase,
     SeedAdminService,
-    {
-      provide: WeatherLogRepository,
-      useClass: MongoDBWeatherLogRepository,
-    },
     CreateUserUseCase,
     AuthenticateUserUseCase,
     GetUserByIdUseCase,
@@ -116,6 +114,14 @@ import { SeedAdminService } from "../services/seed-admin.service";
     {
       provide: TokenProvider,
       useClass: JwtTokenProvider,
+    },
+    {
+      provide: WeatherLogRepository,
+      useClass: MongoDBWeatherLogRepository,
+    },
+    {
+      provide: AIInsightsProvider,
+      useClass: GroqInsightsProvider,
     },
   ],
   exports: [JwtModule],

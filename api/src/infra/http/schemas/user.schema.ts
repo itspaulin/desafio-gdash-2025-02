@@ -1,6 +1,5 @@
 import z from "zod";
 
-// Schema de senha forte
 const passwordSchema = z
   .string()
   .min(8, "Senha deve ter no mínimo 8 caracteres")

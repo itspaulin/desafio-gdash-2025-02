@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { User, CreateUserRequest, UpdateUserRequest } from "@/types/user";
 import { PasswordStrength } from "@/components/PasswordStrength";
+import { Eye, EyeOff } from "lucide-react";
 
 interface UserDialogProps {
   open: boolean;
@@ -41,6 +42,8 @@ export function UserDialog({
     password: "",
     role: "user" as "admin" | "user",
   });
+
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -119,17 +122,32 @@ export function UserDialog({
               <Label htmlFor="password">
                 Senha {user && "(deixe em branco para manter)"}
               </Label>
-              <Input
-                id="password"
-                type="password"
-                value={formData.password}
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
-                required={!user}
-                disabled={isSubmitting}
-                placeholder={user ? "••••••" : ""}
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={formData.password}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
+                  required={!user}
+                  disabled={isSubmitting}
+                  placeholder={user ? "••••••" : ""}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 transition-colors"
+                  disabled={isSubmitting}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
               {!user && <PasswordStrength password={formData.password} />}
             </div>
             <div className="grid gap-2">

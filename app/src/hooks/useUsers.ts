@@ -36,22 +36,19 @@ export function useUsers() {
       return "Erro de conexão. Verifique sua internet e tente novamente.";
     }
 
-    // Caso 1: errors é um array de objetos com path e message (PRIORIDADE MÁXIMA)
     if (Array.isArray(responseData.errors) && responseData.errors.length > 0) {
       const errorMessages = responseData.errors.map((err: any) => {
         if (typeof err === "string") return err;
-        if (err.message) return err.message; // Apenas a mensagem, sem o path
+        if (err.message) return err.message;
         return JSON.stringify(err);
       });
       return errorMessages.join(", ");
     }
 
-    // Caso 2: message é um array de strings
     if (Array.isArray(responseData.message)) {
       return responseData.message.join(", ");
     }
 
-    // Caso 3: message é uma string direta (exceto "Validation failed" genérico)
     if (
       typeof responseData.message === "string" &&
       responseData.message !== "Validation failed"
@@ -59,7 +56,6 @@ export function useUsers() {
       return responseData.message;
     }
 
-    // Caso 4: error é uma string
     if (
       typeof responseData.error === "string" &&
       responseData.error !== "Validation Error"
@@ -67,7 +63,6 @@ export function useUsers() {
       return responseData.error;
     }
 
-    // Fallback genérico
     return "Erro ao processar requisição. Verifique os dados e tente novamente.";
   };
 
