@@ -30,10 +30,7 @@ export class AIInsightsProviderChain implements AIInsightsProvider {
     return this.providers.some((p) => p.provider.isAvailable());
   }
 
-  private generateCacheKey(
-    weatherData: WeatherDataPoint[],
-    location?: string
-  ): string {
+  private generateCacheKey(weatherData: WeatherDataPoint[], location?: string): string {
     const dataHash = createHash("md5")
       .update(JSON.stringify({ weatherData, location }))
       .digest("hex")
@@ -50,31 +47,19 @@ export class AIInsightsProviderChain implements AIInsightsProvider {
     const cached = await this.cacheService.get<AIInsightResponse>(cacheKey);
 
     if (cached) {
-      console.log(`Cache hit para insights [${cacheKey}]`);
       return cached;
     }
 
-    console.log(`⏳ Cache miss, gerando insights... [${cacheKey}]`);
-
     for (const { name, provider } of this.providers) {
       if (!provider.isAvailable()) {
-        console.log(`${name} não disponível, tentando próximo provider...`);
         continue;
       }
-
-      console.log(`Tentando gerar insights com ${name}...`);
 
       try {
         const result = await provider.generateInsights(weatherData, location);
 
         if (result) {
-          console.log(`Insights gerados com sucesso usando ${name}`);
-
           await this.cacheService.set(cacheKey, result, this.CACHE_TTL);
-          console.log(
-            `💾 Insights salvos no cache por ${this.CACHE_TTL / 60} minutos`
-          );
-
           return result;
         }
 
@@ -96,9 +81,7 @@ export class AIInsightsProviderChain implements AIInsightsProvider {
   }
 
   async clearCache(location?: string): Promise<void> {
-    const pattern = location
-      ? `${this.CACHE_PREFIX}${location}:*`
-      : `${this.CACHE_PREFIX}*`;
+    const pattern = location ? `${this.CACHE_PREFIX}${location}:*` : `${this.CACHE_PREFIX}*`;
     await this.cacheService.delPattern(pattern);
   }
 }

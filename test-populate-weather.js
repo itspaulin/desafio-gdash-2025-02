@@ -78,21 +78,21 @@ async function generateWeatherData() {
 }
 
 async function populateDatabase() {
-  console.log("🔐 Fazendo login...");
+  console.log("Fazendo login...");
   let token;
 
   try {
     token = await login();
-    console.log("✅ Login realizado com sucesso!\n");
+    console.log("Login realizado com sucesso!\n");
   } catch (error) {
-    console.error("❌ Não foi possível fazer login. Verifique suas credenciais.");
+    console.error("Não foi possível fazer login. Verifique suas credenciais.");
     return;
   }
 
-  console.log("🌤️  Gerando dados meteorológicos...");
+  console.log("Gerando dados meteorológicos...");
 
   const logs = await generateWeatherData();
-  console.log(`📊 Total de registros gerados: ${logs.length}\n`);
+  console.log(`Total de registros gerados: ${logs.length}\n`);
 
   let success = 0;
   let failed = 0;
@@ -113,14 +113,14 @@ async function populateDatabase() {
       if (response.ok) {
         success++;
         if (success % 10 === 0) {
-          console.log(`✅ ${success}/${logs.length} registros inseridos...`);
+          console.log(`${success}/${logs.length} registros inseridos...`);
         }
       } else {
         failed++;
         const errorData = await response.text();
 
         if (failed === 1) {
-          console.error(`\n❌ Primeiro erro (registro ${i + 1}):`);
+          console.error(`\n Primeiro erro (registro ${i + 1}):`);
           console.error(`Payload enviado:`, JSON.stringify(log, null, 2));
           console.error(`Resposta:`, errorData);
           console.error("");
@@ -130,22 +130,22 @@ async function populateDatabase() {
       failed++;
 
       if (failed === 1) {
-        console.error("❌ Erro ao inserir registro:", error.message);
+        console.error("Erro ao inserir registro:", error.message);
       }
     }
 
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
 
-  console.log("\n📊 Resumo:");
-  console.log(`✅ Sucesso: ${success}`);
-  console.log(`❌ Falhas: ${failed}`);
+  console.log("\n Resumo:");
+  console.log(`Sucesso: ${success}`);
+  console.log(`Falhas: ${failed}`);
 
   if (success > 0) {
-    console.log("\n🎉 Dados inseridos com sucesso!");
-    console.log("💡 Agora atualize o dashboard para ver os filtros funcionando!");
+    console.log("\n Dados inseridos com sucesso!");
+    console.log("Agora atualize o dashboard para ver os filtros funcionando!");
   } else if (failed > 0) {
-    console.log("\n⚠️  Verifique o formato esperado pelo backend acima.");
+    console.log("\n Verifique o formato esperado pelo backend acima.");
   }
 }
 

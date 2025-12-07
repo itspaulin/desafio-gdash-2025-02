@@ -43,7 +43,6 @@ export class GenerateWeatherInsightsUseCase {
   private getCachedInsight(key: string): WeatherInsight | null {
     const cached = this.insightCache.get(key);
     if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
-      console.log("✅ Usando insight do cache");
       return cached.data;
     }
     return null;
@@ -65,10 +64,8 @@ export class GenerateWeatherInsightsUseCase {
         }
       });
       keysToDelete.forEach((key) => this.insightCache.delete(key));
-      console.log(`🗑️ Cache limpo para localização: ${location}`);
     } else {
       this.insightCache.clear();
-      console.log("🗑️ Todo o cache de insights foi limpo");
     }
   }
 
@@ -78,12 +75,10 @@ export class GenerateWeatherInsightsUseCase {
   ): Promise<Either<null, GenerateWeatherInsightsUseCaseResponse>> {
     const cacheKey = this.getCacheKey(request);
 
-    // Só verifica cache se não for regeneração forçada
     if (!forceRegenerate) {
       const cachedInsight = this.getCachedInsight(cacheKey);
 
       if (cachedInsight) {
-        console.log("✅ Cache hit - retornando insight cacheado");
         const result = await this.weatherLogRepository.findMany({
           page: 1,
           limit: request.limit || 100,
@@ -97,8 +92,6 @@ export class GenerateWeatherInsightsUseCase {
           dataPointsAnalyzed: result.data.length,
         });
       }
-    } else {
-      console.log("🔄 Regeneração forçada - ignorando cache");
     }
 
     // Busca dados meteorológicos
@@ -134,28 +127,23 @@ export class GenerateWeatherInsightsUseCase {
       probabilidadeChuva: log.rainProbability,
     }));
 
-    // Tenta gerar insights com IA
     let insightData: Optional<WeatherInsight, "generatedAt">;
 
     if (this.aiInsightsProvider.isAvailable()) {
-      console.log("🤖 Gerando insights com IA...");
       const aiInsights = await this.aiInsightsProvider.generateInsights(
         weatherData,
         request.location
       );
 
       if (aiInsights) {
-        console.log("✅ Insights gerados com IA");
         insightData = {
           ...aiInsights,
           usedFallback: false,
         };
       } else {
-        console.log("⚠️ IA falhou - usando fallback estático");
         insightData = this.generateStaticInsights(weatherData, request.location);
       }
     } else {
-      console.log("⚠️ IA indisponível - usando fallback estático");
       insightData = this.generateStaticInsights(weatherData, request.location);
     }
 
@@ -164,8 +152,6 @@ export class GenerateWeatherInsightsUseCase {
       generatedAt: new Date(),
     };
 
-    console.log("💾 Salvando insights no cache");
-    // Cacheia o resultado
     this.setCachedInsight(cacheKey, insights);
 
     return right({

@@ -38,19 +38,13 @@ export class CacheService {
     }
   }
 
-  /**
-   * Remove múltiplas chaves por padrão
-   */
   async delPattern(pattern: string): Promise<void> {
     try {
       const keys = await this.redis.keys(pattern);
       if (keys.length > 0) {
         await this.redis.del(...keys);
-        console.log(`🗑️ Removidas ${keys.length} chaves do padrão: ${pattern}`);
       }
-    } catch (error) {
-      console.error(`Erro ao deletar padrão [${pattern}]:`, error);
-    }
+    } catch (error) {}
   }
 
   async exists(key: string): Promise<boolean> {
