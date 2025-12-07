@@ -2,45 +2,27 @@ export interface DashboardFilters {
   dateRange: DateRangeFilter;
   metrics: MetricFilter[];
   timeOfDay: TimeOfDayFilter;
-  weatherCondition: WeatherConditionFilter; // ✅ NOVO
+  weatherCondition: WeatherConditionFilter;
   location?: string;
 }
 
 export type DateRangeFilter =
   | { type: "last7days" }
   | { type: "last30days" }
-  | { type: "custom"; startDate: string; endDate: string }; // ✅ NOVO
+  | { type: "custom"; startDate: string; endDate: string };
 
-export type MetricFilter =
-  | "temperature"
-  | "humidity"
-  | "windSpeed"
-  | "rainProbability";
+export type MetricFilter = "temperature" | "humidity" | "windSpeed" | "rainProbability";
 
-export type TimeOfDayFilter =
-  | "all"
-  | "morning"
-  | "afternoon"
-  | "evening"
-  | "night";
+export type TimeOfDayFilter = "all" | "morning" | "afternoon" | "evening" | "night";
 
-export type WeatherConditionFilter = "all" | "clear" | "cloudy" | "rainy"; // ✅ NOVO
+export type WeatherConditionFilter = "all" | "clear" | "cloudy" | "rainy";
 
 export interface ChartConfig {
-  type:
-    | "line"
-    | "bar"
-    | "area"
-    | "pie"
-    | "radar"
-    | "scatter"
-    | "heatmap"
-    | "gauge"; // ✅ NOVO
+  type: "line" | "bar" | "area" | "pie" | "radar" | "scatter" | "heatmap" | "gauge";
   metrics: MetricFilter[];
   title: string;
 }
 
-// ✅ NOVO: Filtros favoritos
 export interface SavedFilter {
   id: string;
   name: string;
@@ -48,7 +30,6 @@ export interface SavedFilter {
   createdAt: string;
 }
 
-// ✅ NOVO: Comparação de períodos
 export interface PeriodComparison {
   period1: {
     startDate: string;

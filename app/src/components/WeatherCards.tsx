@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Thermometer, Droplets, Wind, CloudRain } from "lucide-react";
 import { WeatherLog } from "@/types/weather";
+import { translateWeatherCondition } from "@/lib/translations";
 
 interface WeatherCardsProps {
   currentLog: WeatherLog | undefined;
@@ -36,12 +37,8 @@ export function WeatherCards({ currentLog }: WeatherCardsProps) {
           <Thermometer className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">
-            {currentLog.temperature.toFixed(1)}°C
-          </div>
-          <p className="text-xs text-muted-foreground">
-            {formatDateTime(currentLog.collectedAt)}
-          </p>
+          <div className="text-2xl font-bold">{currentLog.temperature.toFixed(1)}°C</div>
+          <p className="text-xs text-muted-foreground">{formatDateTime(currentLog.collectedAt)}</p>
         </CardContent>
       </Card>
 
@@ -52,9 +49,7 @@ export function WeatherCards({ currentLog }: WeatherCardsProps) {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{currentLog.humidity}%</div>
-          <p className="text-xs text-muted-foreground">
-            Umidade relativa do ar
-          </p>
+          <p className="text-xs text-muted-foreground">Umidade relativa do ar</p>
         </CardContent>
       </Card>
 
@@ -64,9 +59,7 @@ export function WeatherCards({ currentLog }: WeatherCardsProps) {
           <Wind className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">
-            {currentLog.windSpeed.toFixed(1)} km/h
-          </div>
+          <div className="text-2xl font-bold">{currentLog.windSpeed.toFixed(1)} km/h</div>
           <p className="text-xs text-muted-foreground">Velocidade do vento</p>
         </CardContent>
       </Card>
@@ -78,11 +71,9 @@ export function WeatherCards({ currentLog }: WeatherCardsProps) {
         </CardHeader>
         <CardContent>
           <div className="text-xl font-bold capitalize">
-            {currentLog.skyCondition}
+            {translateWeatherCondition(currentLog.skyCondition)}
           </div>
-          <p className="text-xs text-muted-foreground">
-            🌧️ Chuva: {currentLog.rainProbability}%
-          </p>
+          <p className="text-xs text-muted-foreground">🌧️ Chuva: {currentLog.rainProbability}%</p>
         </CardContent>
       </Card>
     </div>
