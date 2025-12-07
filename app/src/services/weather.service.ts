@@ -9,12 +9,7 @@ import {
 } from "@/types/weather";
 
 export const weatherService = {
-  async getLogs(params?: {
-    page?: number;
-    limit?: number;
-    startDate?: string;
-    endDate?: string;
-  }) {
+  async getLogs(params?: { page?: number; limit?: number; startDate?: string; endDate?: string }) {
     const { data } = await api.get<{
       data: WeatherLog[];
       pagination: any;
@@ -23,10 +18,9 @@ export const weatherService = {
   },
 
   async getStatistics(params?: { startDate?: string; endDate?: string }) {
-    const { data } = await api.get<{ data: WeatherStatistics }>(
-      "/weather/analytics/statistics",
-      { params }
-    );
+    const { data } = await api.get<{ data: WeatherStatistics }>("/weather/analytics/statistics", {
+      params,
+    });
     return data.data;
   },
 
@@ -46,17 +40,28 @@ export const weatherService = {
   },
 
   async getInsights(params?: { regenerate?: boolean }) {
-    const { data } = await api.get<{ data: WeatherInsight }>(
-      "/weather/insights",
-      { params }
-    );
+    console.log("🌐 weatherService.getInsights: GET request (cached)");
+    const { data } = await api.get<{ data: WeatherInsight }>("/weather/insights", { params });
+    console.log("📦 weatherService.getInsights: Response:", {
+      generatedAt: data.data.generatedAt,
+      summary: data.data.summary?.substring(0, 50),
+    });
     return data.data;
   },
 
   async generateInsights() {
-    const { data } = await api.post<{ data: WeatherInsight }>(
-      "/weather/insights"
-    );
+    console.log("🌐 weatherService.generateInsights: POST request (force regenerate)");
+    console.log("📤 Endpoint: POST /weather/insights");
+
+    // ADICIONE ESTE LOG ANTES DA CHAMADA
+    console.log("🔍 Axios config:", {
+      method: "POST",
+      url: "/weather/insights",
+    });
+
+    const { data } = await api.post<{ data: WeatherInsight }>("/weather/insights");
+
+    console.log("📦 Response:", data);
     return data.data;
   },
 

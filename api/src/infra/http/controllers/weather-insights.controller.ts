@@ -10,18 +10,13 @@ import {
 } from "@nestjs/common";
 import { ZodValidationPipe } from "../pipes/zod-validation.pipe";
 import { GenerateWeatherInsightsUseCase } from "src/domain/application/use-cases/generate-weather-insights.use-case";
-import {
-  InsightsQueryParams,
-  insightsQuerySchema,
-} from "../schemas/weather-log.schema";
+import { InsightsQueryParams, insightsQuerySchema } from "../schemas/weather-log.schema";
 
 @Controller("weather/insights")
 export class WeatherInsightsController {
   private readonly logger = new Logger(WeatherInsightsController.name);
 
-  constructor(
-    private generateWeatherInsights: GenerateWeatherInsightsUseCase
-  ) {}
+  constructor(private generateWeatherInsights: GenerateWeatherInsightsUseCase) {}
 
   @Get()
   @HttpCode(HttpStatus.OK)
@@ -49,9 +44,7 @@ export class WeatherInsightsController {
     if (result.isRight()) {
       const { insights, dataPointsAnalyzed } = result.value;
 
-      this.logger.log(
-        `Insights gerados com sucesso (${dataPointsAnalyzed} pontos analisados)`
-      );
+      this.logger.log(`Insights gerados com sucesso (${dataPointsAnalyzed} pontos analisados)`);
 
       return {
         message: "Insights generated successfully",
@@ -68,6 +61,33 @@ export class WeatherInsightsController {
   @HttpCode(HttpStatus.OK)
   @UsePipes(new ZodValidationPipe(insightsQuerySchema))
   async generateInsights(@Query() query: InsightsQueryParams) {
-    return this.getInsights(query);
+    this.logger.log("🔄 POST /insights - Forçando regeneração de insights");
+
+    this.generateWeatherInsights.clearCache(query.location);
+
+    const result = await this.generateWeatherInsights.execute(
+      {
+        startDate: query.startDate,
+        endDate: query.endDate,
+        location: query.location,
+        limit: query.limit || 100,
+      },
+      true
+    );
+
+    if (result.isRight()) {
+      const { insights, dataPointsAnalyzed } = result.value;
+
+      this.logger.log(`✅ Novos insights gerados (${dataPointsAnalyzed} pontos analisados)`);
+
+      return {
+        message: "Insights regenerated successfully",
+        data: insights,
+        metadata: {
+          dataPointsAnalyzed,
+          generatedAt: insights.generatedAt,
+        },
+      };
+    }
   }
 }

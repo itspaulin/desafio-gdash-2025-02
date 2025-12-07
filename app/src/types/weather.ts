@@ -76,10 +76,13 @@ export interface WeatherAlert {
 
 export interface WeatherInsight {
   summary: string;
-  trends: WeatherTrend[];
-  alerts: WeatherAlert[];
+  trends: WeatherTrend[] | string[];
+  alerts?: WeatherAlert[];
   recommendations: string[];
+  predictions?: string[];
+  anomalies?: string[];
   generatedAt: string;
+  usedFallback?: boolean;
 }
 
 export interface WeatherDashboard {

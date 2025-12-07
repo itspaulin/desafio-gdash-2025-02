@@ -28,10 +28,7 @@ export interface GenerateWeatherInsightsUseCaseResponse {
 
 @Injectable()
 export class GenerateWeatherInsightsUseCase {
-  private insightCache = new Map<
-    string,
-    { data: WeatherInsight; timestamp: number }
-  >();
+  private insightCache = new Map<string, { data: WeatherInsight; timestamp: number }>();
   private readonly CACHE_TTL = 1000 * 60 * 30; // 30 minutos
 
   constructor(
@@ -59,26 +56,49 @@ export class GenerateWeatherInsightsUseCase {
     });
   }
 
+  clearCache(location?: string): void {
+    if (location) {
+      const keysToDelete: string[] = [];
+      this.insightCache.forEach((_, key) => {
+        if (key.startsWith(location)) {
+          keysToDelete.push(key);
+        }
+      });
+      keysToDelete.forEach((key) => this.insightCache.delete(key));
+      console.log(`🗑️ Cache limpo para localização: ${location}`);
+    } else {
+      this.insightCache.clear();
+      console.log("🗑️ Todo o cache de insights foi limpo");
+    }
+  }
+
   async execute(
-    request: GenerateWeatherInsightsUseCaseRequest
+    request: GenerateWeatherInsightsUseCaseRequest,
+    forceRegenerate = false
   ): Promise<Either<null, GenerateWeatherInsightsUseCaseResponse>> {
-    // Verifica cache primeiro
     const cacheKey = this.getCacheKey(request);
-    const cachedInsight = this.getCachedInsight(cacheKey);
 
-    if (cachedInsight) {
-      const result = await this.weatherLogRepository.findMany({
-        page: 1,
-        limit: request.limit || 100,
-        startDate: request.startDate,
-        endDate: request.endDate,
-        location: request.location,
-      });
+    // Só verifica cache se não for regeneração forçada
+    if (!forceRegenerate) {
+      const cachedInsight = this.getCachedInsight(cacheKey);
 
-      return right({
-        insights: cachedInsight,
-        dataPointsAnalyzed: result.data.length,
-      });
+      if (cachedInsight) {
+        console.log("✅ Cache hit - retornando insight cacheado");
+        const result = await this.weatherLogRepository.findMany({
+          page: 1,
+          limit: request.limit || 100,
+          startDate: request.startDate,
+          endDate: request.endDate,
+          location: request.location,
+        });
+
+        return right({
+          insights: cachedInsight,
+          dataPointsAnalyzed: result.data.length,
+        });
+      }
+    } else {
+      console.log("🔄 Regeneração forçada - ignorando cache");
     }
 
     // Busca dados meteorológicos
@@ -118,25 +138,24 @@ export class GenerateWeatherInsightsUseCase {
     let insightData: Optional<WeatherInsight, "generatedAt">;
 
     if (this.aiInsightsProvider.isAvailable()) {
+      console.log("🤖 Gerando insights com IA...");
       const aiInsights = await this.aiInsightsProvider.generateInsights(
         weatherData,
         request.location
       );
 
       if (aiInsights) {
+        console.log("✅ Insights gerados com IA");
         insightData = {
           ...aiInsights,
           usedFallback: false,
         };
       } else {
-        // Fallback se a IA falhar
-        insightData = this.generateStaticInsights(
-          weatherData,
-          request.location
-        );
+        console.log("⚠️ IA falhou - usando fallback estático");
+        insightData = this.generateStaticInsights(weatherData, request.location);
       }
     } else {
-      // Fallback se a IA não estiver disponível
+      console.log("⚠️ IA indisponível - usando fallback estático");
       insightData = this.generateStaticInsights(weatherData, request.location);
     }
 
@@ -145,6 +164,7 @@ export class GenerateWeatherInsightsUseCase {
       generatedAt: new Date(),
     };
 
+    console.log("💾 Salvando insights no cache");
     // Cacheia o resultado
     this.setCachedInsight(cacheKey, insights);
 
@@ -163,17 +183,11 @@ export class GenerateWeatherInsightsUseCase {
     const humidities = weatherData.map((d) => d.umidade);
     const windSpeeds = weatherData.map((d) => d.velocidadeVento);
 
-    const avgTemp = (
-      temperatures.reduce((a, b) => a + b, 0) / temperatures.length
-    ).toFixed(1);
+    const avgTemp = (temperatures.reduce((a, b) => a + b, 0) / temperatures.length).toFixed(1);
     const maxTemp = Math.max(...temperatures);
     const minTemp = Math.min(...temperatures);
-    const avgHumidity = (
-      humidities.reduce((a, b) => a + b, 0) / humidities.length
-    ).toFixed(1);
-    const avgWindSpeed = (
-      windSpeeds.reduce((a, b) => a + b, 0) / windSpeeds.length
-    ).toFixed(1);
+    const avgHumidity = (humidities.reduce((a, b) => a + b, 0) / humidities.length).toFixed(1);
+    const avgWindSpeed = (windSpeeds.reduce((a, b) => a + b, 0) / windSpeeds.length).toFixed(1);
 
     // Identifica condições mais comuns
     const conditions = weatherData.map((d) => d.condicao);
@@ -185,9 +199,8 @@ export class GenerateWeatherInsightsUseCase {
       {} as Record<string, number>
     );
     const mostCommonCondition =
-      Object.entries(conditionCounts).sort(
-        (a, b) => (b[1] as number) - (a[1] as number)
-      )[0]?.[0] || "variado";
+      Object.entries(conditionCounts).sort((a, b) => (b[1] as number) - (a[1] as number))[0]?.[0] ||
+      "variado";
 
     const locationText = location || "a região analisada";
 
@@ -196,9 +209,7 @@ export class GenerateWeatherInsightsUseCase {
     const trends: string[] = [];
 
     if (maxTemp - minTemp > 10) {
-      trends.push(
-        `Alta amplitude térmica (${(maxTemp - minTemp).toFixed(1)}°C de variação)`
-      );
+      trends.push(`Alta amplitude térmica (${(maxTemp - minTemp).toFixed(1)}°C de variação)`);
     }
 
     if (parseFloat(avgHumidity) > 70) {
@@ -237,9 +248,7 @@ export class GenerateWeatherInsightsUseCase {
       mostCommonCondition.toLowerCase().includes("rain") ||
       mostCommonCondition.toLowerCase().includes("chuva")
     ) {
-      recommendations.push(
-        "☔ Chuvas frequentes: tenha sempre um guarda-chuva à mão"
-      );
+      recommendations.push("☔ Chuvas frequentes: tenha sempre um guarda-chuva à mão");
     }
 
     const predictions: string[] = [
@@ -256,9 +265,7 @@ export class GenerateWeatherInsightsUseCase {
       anomalies.push(`Temperatura mínima baixa registrada: ${minTemp}°C`);
     }
     if (parseFloat(avgWindSpeed) > 30) {
-      anomalies.push(
-        `Ventos muito fortes registrados (média de ${avgWindSpeed} km/h)`
-      );
+      anomalies.push(`Ventos muito fortes registrados (média de ${avgWindSpeed} km/h)`);
     }
 
     return {
