@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { weatherService } from "@/services/weather.service";
-import { WeatherDashboard, WeatherInsight } from "@/types/weather";
+import { WeatherDashboard, WeatherInsight, WeatherLog } from "@/types/weather";
+import { ChartConfig } from "@/types/filters";
 
 export function useDashboard() {
   const [dashboard, setDashboard] = useState<WeatherDashboard | null>(null);
@@ -118,24 +119,60 @@ export function useDashboard() {
     return dashboard?.recentLogs?.data
       ?.slice()
       .reverse()
-      .map((log) => ({
-        time: new Date(log.collectedAt).toLocaleString("pt-BR", {
-          day: "2-digit",
-          month: "2-digit",
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-        temperatura: log.temperature,
-        umidade: log.humidity,
-        vento: log.windSpeed,
-        chuva: log.rainProbability,
-      }));
+      .map((log: WeatherLog) => {
+        const date = new Date(log.collectedAt);
+
+        return {
+          time: date.toLocaleString("pt-BR", {
+            day: "2-digit",
+            month: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          temperatura: log.temperature,
+          umidade: log.humidity,
+          vento: log.windSpeed,
+          chuva: log.rainProbability,
+          condition: log.skyCondition,
+          collectedAt: log.collectedAt,
+          rawDate: date,
+          weatherLog: log,
+        };
+      });
   };
 
   useEffect(() => {
     loadDashboard();
     loadInsights();
   }, []);
+
+  const chartConfigs: ChartConfig[] = [
+    {
+      type: "line",
+      metrics: ["temperature", "humidity"],
+      title: "Temperatura e Umidade",
+    },
+    {
+      type: "area",
+      metrics: ["windSpeed", "rainProbability"],
+      title: "Vento e Precipitação",
+    },
+    {
+      type: "bar",
+      metrics: ["temperature", "humidity", "windSpeed"],
+      title: "Comparativo Geral",
+    },
+    {
+      type: "pie",
+      metrics: ["temperature", "humidity", "windSpeed", "rainProbability"],
+      title: "Distribuição de Métricas",
+    },
+    {
+      type: "radar",
+      metrics: ["temperature", "humidity", "windSpeed", "rainProbability"],
+      title: "Análise Multivariável",
+    },
+  ];
 
   return {
     dashboard,
@@ -144,13 +181,12 @@ export function useDashboard() {
     isRefreshing,
     isExporting,
     isLoadingInsights,
-
     loadDashboard,
     loadInsights,
     regenerateInsights,
     handleExportCSV,
     handleExportXLSX,
-
+    chartConfigs,
     chartData: getChartData(),
     currentLog: dashboard?.recentLogs?.data?.[0],
     location: dashboard?.location || "Natal, RN",

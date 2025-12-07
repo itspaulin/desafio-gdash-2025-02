@@ -33,7 +33,7 @@ export function Sidebar({
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between w-full">
-            <div className="flex gap-4">
+            <div className="flex items-center gap-3">
               <Cloud className="h-6 w-6 text-primary" />
               <span className="font-bold text-lg">Weather</span>
             </div>
@@ -42,7 +42,7 @@ export function Sidebar({
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden"
+            className="lg:hidden ml-2"
             onClick={onClose}
           >
             <X className="h-5 w-5" />
@@ -50,7 +50,7 @@ export function Sidebar({
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-2">
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
           {navigation.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.href;
@@ -63,11 +63,11 @@ export function Sidebar({
                   "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors",
                   isActive
                     ? "bg-primary text-primary-foreground"
-                    : "hover:bg-gray-100 dark:hover:bg-gray-700"
+                    : "hover:bg-gray-100 dark:hover:bg-gray-700 text-foreground"
                 )}
               >
-                <Icon className="h-5 w-5" />
-                <span>{item.name}</span>
+                <Icon className="h-5 w-5 flex-shrink-0" />
+                <span className="text-sm font-medium">{item.name}</span>
               </Link>
             );
           })}
@@ -82,7 +82,7 @@ export function Sidebar({
                 {user?.email}
               </p>
             </div>
-            <Button variant="ghost" size="icon" onClick={onLogout}>
+            <Button variant="ghost" size="icon" onClick={onLogout} title="Sair">
               <LogOut className="h-5 w-5" />
             </Button>
           </div>

@@ -4,6 +4,7 @@ export interface WeatherLog {
   humidity: number;
   windSpeed: number;
   skyCondition: string;
+  weather: string;
   rainProbability: number;
   location: string;
   collectedAt: string;
@@ -39,6 +40,22 @@ export interface WeatherStatistics {
     start: string;
     end: string;
   };
+}
+
+export interface WeatherChartsProps {
+  chartData: ChartDataPoint[] | undefined;
+}
+
+export interface ChartDataPoint {
+  time: string;
+  temperatura: number;
+  umidade: number;
+  vento: number;
+  chuva: number;
+  condition?: string;
+  collectedAt?: string;
+  rawDate?: Date;
+  weatherLog?: WeatherLog;
 }
 
 export interface WeatherTrend {

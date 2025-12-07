@@ -5,6 +5,7 @@ import { Toaster } from "./components/ui/toaster";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { LoginPage } from "./pages/LoginPage";
 import { DashboardPage } from "./pages/DashboardPage";
+import { AdvancedDashboardPage } from "./pages/AdvancedDashboardPage";
 import { UsersPage } from "./pages/UsersPage";
 import { Layout } from "./pages/Layout";
 import { ThemeProvider } from "./contexts/ThemeContext";
@@ -21,6 +22,8 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+
+          {/* Dashboard Simples */}
           <Route
             path="/"
             element={
@@ -31,6 +34,20 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* Dashboard Avançado */}
+          <Route
+            path="/advanced"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <AdvancedDashboardPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Usuários */}
           <Route
             path="/users"
             element={
@@ -41,6 +58,8 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* Redirect para home */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         <Toaster />

@@ -18,18 +18,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-
-interface ChartDataPoint {
-  time: string;
-  temperatura: number;
-  umidade: number;
-  vento: number;
-  chuva: number;
-}
-
-interface WeatherChartsProps {
-  chartData: ChartDataPoint[] | undefined;
-}
+import { WeatherChartsProps } from "@/types/weather";
 
 export function WeatherCharts({ chartData }: WeatherChartsProps) {
   const [isDark, setIsDark] = useState(
@@ -37,7 +26,6 @@ export function WeatherCharts({ chartData }: WeatherChartsProps) {
   );
 
   useEffect(() => {
-    // Observer para detectar mudanças na classe 'dark' do html
     const observer = new MutationObserver(() => {
       setIsDark(document.documentElement.classList.contains("dark"));
     });
@@ -52,7 +40,6 @@ export function WeatherCharts({ chartData }: WeatherChartsProps) {
 
   if (!chartData || chartData.length === 0) return null;
 
-  // Cores adaptativas com melhor contraste
   const gridColor = isDark ? "#374151" : "#e5e7eb";
   const axisColor = isDark ? "#e5e7eb" : "#6b7280";
   const tooltipBg = isDark ? "#1f2937" : "#ffffff";

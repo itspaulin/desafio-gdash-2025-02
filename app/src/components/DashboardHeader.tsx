@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Download } from "lucide-react";
-import { ThemeToggle } from "./ThemeToggle";
 
 interface DashboardHeaderProps {
   location: string;
