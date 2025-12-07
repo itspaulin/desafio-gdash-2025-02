@@ -1,6 +1,5 @@
 const API_URL = "http://localhost:3000";
 
-// Função para fazer login e obter o token
 async function login() {
   try {
     const response = await fetch(`${API_URL}/auth/login`, {
@@ -30,7 +29,6 @@ async function generateWeatherData() {
   const now = new Date();
   const logs = [];
 
-  // Gerar 30 dias de dados (4 registros por dia = 120 registros)
   for (let day = 0; day < 30; day++) {
     for (let hour = 0; hour < 24; hour += 6) {
       const date = new Date(now);
@@ -48,15 +46,14 @@ async function generateWeatherData() {
       ];
       const weather = conditions[Math.floor(Math.random() * conditions.length)];
 
-      // Formato COMPLETO com lat/long como STRINGS
       const log = {
         timestamp: date.toISOString(),
         location: {
           city: "Natal",
           state: "RN",
           country: "BR",
-          latitude: "-5.7945", // ✅ STRING
-          longitude: "-35.211", // ✅ STRING
+          latitude: "-5.7945",
+          longitude: "-35.211",
         },
         weather: {
           temperature: temperature,
@@ -88,9 +85,7 @@ async function populateDatabase() {
     token = await login();
     console.log("✅ Login realizado com sucesso!\n");
   } catch (error) {
-    console.error(
-      "❌ Não foi possível fazer login. Verifique suas credenciais."
-    );
+    console.error("❌ Não foi possível fazer login. Verifique suas credenciais.");
     return;
   }
 
@@ -139,7 +134,6 @@ async function populateDatabase() {
       }
     }
 
-    // Pequeno delay para não sobrecarregar
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
 
@@ -149,9 +143,7 @@ async function populateDatabase() {
 
   if (success > 0) {
     console.log("\n🎉 Dados inseridos com sucesso!");
-    console.log(
-      "💡 Agora atualize o dashboard para ver os filtros funcionando!"
-    );
+    console.log("💡 Agora atualize o dashboard para ver os filtros funcionando!");
   } else if (failed > 0) {
     console.log("\n⚠️  Verifique o formato esperado pelo backend acima.");
   }
