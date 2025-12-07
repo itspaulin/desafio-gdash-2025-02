@@ -33,16 +33,10 @@ export function useDashboard() {
 
   const loadInsights = async () => {
     try {
-      console.log("📥 loadInsights: Iniciando carregamento...");
       setIsLoadingInsights(true);
       const data = await weatherService.getInsights();
-      console.log("✅ loadInsights: Dados recebidos:", {
-        hasData: !!data,
-        generatedAt: data?.generatedAt,
-      });
       setInsights(data);
     } catch (error: any) {
-      console.error("❌ loadInsights: Erro:", error);
       toast({
         variant: "destructive",
         title: "Erro ao carregar insights",
@@ -50,42 +44,14 @@ export function useDashboard() {
       });
     } finally {
       setIsLoadingInsights(false);
-      console.log("🏁 loadInsights: Finalizado");
     }
   };
 
   const regenerateInsights = async () => {
-    console.log("🔄 regenerateInsights: FUNÇÃO CHAMADA!");
-    console.log("📊 Estado atual:", {
-      hasInsights: !!insights,
-      generatedAt: insights?.generatedAt,
-      isLoadingInsights,
-    });
-
     try {
-      console.log("⏳ regenerateInsights: Setando loading para true...");
       setIsLoadingInsights(true);
-
-      console.log("🚀 regenerateInsights: Chamando weatherService.generateInsights() [POST]...");
       const data = await weatherService.generateInsights();
-
-      console.log("✅ regenerateInsights: Novos dados recebidos:", {
-        hasData: !!data,
-        generatedAt: data?.generatedAt,
-        summary: data?.summary?.substring(0, 50),
-        hasTrends: data?.trends?.length,
-        hasAlerts: data?.alerts?.length,
-        hasRecommendations: data?.recommendations?.length,
-      });
-
-      console.log("💾 regenerateInsights: Atualizando estado com setInsights...");
       setInsights(data);
-
-      console.log("🎉 regenerateInsights: Mostrando toast de sucesso");
-      toast({
-        title: "Insights atualizados",
-        description: "Análise de IA regenerada com sucesso",
-      });
     } catch (error: any) {
       console.error("❌ regenerateInsights: ERRO CAPTURADO:", {
         error,
@@ -99,9 +65,7 @@ export function useDashboard() {
         description: error.response?.data?.message || "Tente novamente",
       });
     } finally {
-      console.log("🏁 regenerateInsights: Setando loading para false");
       setIsLoadingInsights(false);
-      console.log("✨ regenerateInsights: PROCESSO COMPLETO!");
     }
   };
 
@@ -172,7 +136,6 @@ export function useDashboard() {
   };
 
   useEffect(() => {
-    console.log("🎬 useDashboard: useEffect inicial executando");
     loadDashboard();
     loadInsights();
   }, []);

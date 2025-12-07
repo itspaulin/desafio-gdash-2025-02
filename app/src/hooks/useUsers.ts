@@ -19,8 +19,7 @@ export function useUsers() {
       toast({
         variant: "destructive",
         title: "Erro ao carregar usuários",
-        description:
-          error.response?.data?.message || "Tente novamente mais tarde",
+        description: error.response?.data?.message || "Tente novamente mais tarde",
       });
     } finally {
       setIsLoading(false);
@@ -28,8 +27,6 @@ export function useUsers() {
   };
 
   const getErrorMessage = (error: any): string => {
-    console.log("🔍 Error completo:", error.response?.data);
-
     const responseData = error.response?.data;
 
     if (!responseData) {
@@ -49,17 +46,11 @@ export function useUsers() {
       return responseData.message.join(", ");
     }
 
-    if (
-      typeof responseData.message === "string" &&
-      responseData.message !== "Validation failed"
-    ) {
+    if (typeof responseData.message === "string" && responseData.message !== "Validation failed") {
       return responseData.message;
     }
 
-    if (
-      typeof responseData.error === "string" &&
-      responseData.error !== "Validation Error"
-    ) {
+    if (typeof responseData.error === "string" && responseData.error !== "Validation Error") {
       return responseData.error;
     }
 
@@ -94,9 +85,7 @@ export function useUsers() {
     try {
       setIsSubmitting(true);
       const updatedUser = await userService.updateUser(id, userData);
-      setUsers((prev) =>
-        prev.map((user) => (user.id === id ? updatedUser : user))
-      );
+      setUsers((prev) => prev.map((user) => (user.id === id ? updatedUser : user)));
       toast({
         title: "Usuário atualizado!",
         description: `${updatedUser.name} foi atualizado com sucesso.`,
